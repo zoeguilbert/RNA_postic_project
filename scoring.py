@@ -1,3 +1,28 @@
+"""
+Author: Zoe GUILBERT
+Date: 2025-01-24
+
+Description:
+This script processes a PDB file to extract C3' atom data, computes distances between C3' atoms,
+and calculates the estimated Gibbs free energy of the evaluated RNA conformation using linear interpolation.
+
+Instructions:
+1. Set the input file path to your PDB file.
+2. Set the output folder path where you want to save the results.
+3. Ensure the intervals for linear interpolation are defined correctly.
+4. Run the script.
+
+Input Table:
+The input PDB file should contain atomic coordinates in the standard PDB format.
+The script extracts C3' atoms and computes distances between them.
+
+Output:
+- A tabular file containing C3' atom data.
+- A tabular file containing computed distances.
+- The estimated Gibbs free energy printed to the console.
+"""
+
+
 import math
 import os
 
@@ -128,7 +153,7 @@ def calculate_gibbs_free_energy(distances, intervals):
     gibbs_free_energy = sum(scores)
     return gibbs_free_energy
 
-# Example usage
+# Main code
 if __name__ == "__main__":
     # Process the PDB file and collect C3' data
     tabular_file_path = extraction_C3_tabular_format(input_file_path, output_folder_path)
