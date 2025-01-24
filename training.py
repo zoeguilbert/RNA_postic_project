@@ -1,23 +1,50 @@
-# bla
+"""
+Author: Zoe GUILBERT
+Date: 2025-01-24
+
+Description:
+This script processes PDB files to extract C3' atom data, computes distances between C3' atoms,
+calculates the estimated energy of the evaluated RNA conformation, and plots the interaction profiles.
+
+Instructions:
+1. Set the input folder path containing PDB files.
+2. Set the output folder path where you want to save the results.
+3. Run the script.
+
+Input Table:
+The input PDB files should contain atomic coordinates in the standard PDB format.
+The script extracts C3' atoms and computes distances between them.
+
+Output:
+- Tabular files containing C3' atom data.
+- Tabular files containing computed distances.
+- Tabular files containing estimated energy profiles.
+- Plots of interaction profiles saved in the specified output folder.
+"""
+
+import os
+import math
+from collections import defaultdict
+import matplotlib.pyplot as plt
+
+# Things to Change
+"""
+1. Set the input folder path containing PDB files.
+2. Set the output folder path where you want to save the results.
+"""
+RNA_pdb_folder = "/home/zozo/Documents/RNA_postic/01_RNA_pdb_1gid"
+output_folder = "/home/zozo/Documents/RNA_postic/02_results"
 
 
-
-## Part I : Extracting C3' coordinates and informations
-
-
-### STEP 1 : Process the PDB file and collect C3' data
-
-# Define the input file path
-input_file_path = "/home/zozo/Documents/RNA_postic/RNA_pdb/1gid.pdb"
 
 # Define headers for the output file
 header = [
-    "Residue Name",     # Residue name (e.g., C)
-    "Residue number", # Residue sequence number (e.g., 127)
-    "Chain ID",         # Chain ID (e.g., A)
-    "X Coordinate",     # X Coordinate (e.g., 19.212)
-    "Y Coordinate",     # Y Coordinate (e.g., 56.017)
-    "Z Coordinate"      # Z Coordinate (e.g., 58.123)
+    "Residue_Name",     # Residue name (e.g., C)
+    "Residue_number",   # Residue sequence number (e.g., 127)
+    "Chain_ID",         # Chain ID (e.g., A)
+    "X_Coordinate",     # X Coordinate (e.g., 19.212)
+    "Y_Coordinate",     # Y Coordinate (e.g., 56.017)
+    "Z_Coordinate"      # Z Coordinate (e.g., 58.123)
 ]
 
 # Function to parse a single line for C3' atoms
@@ -34,18 +61,18 @@ def parse_c3_prime(line):
         ]
     return None
 
-# Function Process the PDB file and collect C3' data
-def extraction_C3_tabular_format(input_file_path):
+# Function to process the PDB file and collect C3' data
+def extraction_C3_tabular_format(input_file_path, output_folder):
     tabular_data = []
     with open(input_file_path, 'r') as file:
         for line in file:
             parsed_line = parse_c3_prime(line)
             if parsed_line:
-                print(parsed_line)
                 tabular_data.append(parsed_line)
 
     # Write the results to an output file
-    output_file_path = input_file_path.split('/')[-1].replace('.pdb', '_C3_tabular.txt')
+    base_name = os.path.basename(input_file_path).replace('.pdb', '_C3_tabular.txt')
+    output_file_path = os.path.join(output_folder, base_name)
     with open(output_file_path, 'w') as output_file:
         output_file.write('\t'.join(header) + '\n')  # Write headers
         for row in tabular_data:                     # Write each parsed row
@@ -54,25 +81,25 @@ def extraction_C3_tabular_format(input_file_path):
     print(f"Tabular file created: {output_file_path}")
     return output_file_path
 
-### STEP 2 : Calculation of distances
-
-import math
-
 # Function to calculate the distance between two points in 3D space
 def calculate_distance(atom1, atom2):
     x1, y1, z1 = atom1[3], atom1[4], atom1[5]
     x2, y2, z2 = atom2[3], atom2[4], atom2[5]
     return math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2 + (z2 - z1) ** 2)
 
-# Function to compute distances between C3' atoms
-def compute_distances(tabular_file_path):
+# Function to compute distances between C3' atoms and combine results
+def compute_distances_and_combine(tabular_file_path, combined_output_file_path):
+    
+     # Extract the base name of the file (e.g., "8olv" from "8olv_C3_tabular.txt")
+    base_name = os.path.basename(tabular_file_path).replace('_C3_tabular.txt', '')
+    
     # Read the tabular file and parse the data
     with open(tabular_file_path, 'r') as file:
         lines = file.readlines()
 
     c3_atoms = [line.strip().split('\t') for line in lines[1:]]
     c3_atoms = [[parts[0], int(parts[1]), parts[2], float(parts[3]), float(parts[4]), float(parts[5])] for parts in c3_atoms]
-
+    
     # Define valid base pairs
     base_pairs = {
         ("A", "A"), ("A", "U"), ("A", "C"), ("A", "G"),
@@ -83,46 +110,35 @@ def compute_distances(tabular_file_path):
 
     # Create tabular data for output
     tabular_data = []
-    header = ["Base Pair", "Residue i", "Residue j", "Distance (Å)"]
+    header = ["Base_Pair", "Distance_Interval", "Observed_Frequency", "Reference_Frequency", "Log-Ratio"]
 
     # Compute distances and store them directly in tabular_data
-    for i in range(len(c3_atoms)):
+    for i in range(len(c3_atoms)-4):
         for j in range(i + 4, len(c3_atoms)):  # Residues must be separated by at least 3 positions
             if c3_atoms[i][2] == c3_atoms[j][2]:  # Only consider intrachain distances
                 base_pair = tuple(sorted((c3_atoms[i][0], c3_atoms[j][0])))
                 if base_pair in base_pairs:
                     distance = calculate_distance(c3_atoms[i], c3_atoms[j])
-                    tabular_data.append([f"{base_pair[0]}-{base_pair[1]}", c3_atoms[i][1], c3_atoms[j][1], distance])
+                    tabular_data.append([base_name,f"{base_pair[0]}-{base_pair[1]}", c3_atoms[i][1], c3_atoms[j][1], distance])
 
-    # Write the tabular data to a new file
-    base_name = tabular_file_path.split('/')[-1].split('.')[0]
-    output_file_path = f"{base_name}_distances.txt"
-
-    with open(output_file_path, 'w') as output_file:
-        output_file.write('\t'.join(header) + '\n')
+    # Append the results to the combined output file
+    with open(combined_output_file_path, 'a') as output_file:
         for row in tabular_data:
             output_file.write('\t'.join(map(str, row)) + '\n')
 
-    print(f"Tabular file created: {output_file_path}")
-    return output_file_path
- 
-
-# STEP 3 : Calculate the estimated enregy for each base pairs and each distances intervals
-
-import math
-from collections import defaultdict
+    print(f"Distances computed and combined for file: {tabular_file_path}")
 
 # Function to calculate the estimated energy for each base pair and each distance interval
-def calculate_energy(tabular_file_path):
+def calculate_energy(tabular_file_path, output_folder):
     # Read the tabular file and parse the data
     with open(tabular_file_path, 'r') as file:
         lines = file.readlines()
 
-    data = [line.strip().split('\t') for line in lines[1:]]
-    data = [[parts[0], int(parts[1]), int(parts[2]), float(parts[3])] for parts in data]
+    data = [line.strip().split('\t') for line in lines[1:]] # skip header
+    data = [[parts[0], parts[1], int(parts[2]),int(parts[3]), float(parts[4])] for parts in data]
 
     # Define distance intervals (bins)
-    distance_bins = [(i, i + 1) for i in range(21)]
+    distance_bins = [(i, i + 2) for i in range(101)]
 
     # Create a dictionary to store the counts for each base pair and distance interval
     counts = defaultdict(lambda: [0] * len(distance_bins))
@@ -131,7 +147,7 @@ def calculate_energy(tabular_file_path):
 
     # Count the number of pairs for each base pair and distance interval
     for entry in data:
-        base_pair, seq_i, seq_j, distance = entry
+        rna_name, base_pair, seq_i, seq_j, distance = entry
         for i, (lower, upper) in enumerate(distance_bins):
             if lower < distance <= upper:
                 counts[base_pair][i] += 1
@@ -165,7 +181,7 @@ def calculate_energy(tabular_file_path):
 
     # Create tabular data for output
     tabular_data = []
-    header = ["Base Pair", "Distance Interval", "Observed Frequency", "Reference Frequency", "Log-Ratio"]
+    header = ["Base_Pair", "Distance_Interval", "Observed_Frequency", "Reference_Frequency", "Log-Ratio"]
 
     for base_pair, freq_list in observed_frequencies.items():
         for i, (lower, upper) in enumerate(distance_bins):
@@ -179,7 +195,7 @@ def calculate_energy(tabular_file_path):
 
     # Write the tabular data to a new file
     base_name = tabular_file_path.split('/')[-1].split('.')[0]
-    output_file_path = f"{base_name}_energy.txt"
+    output_file_path = f"{output_folder}/{base_name}_energy.txt"
 
     with open(output_file_path, 'w') as output_file:
         output_file.write('\t'.join(header) + '\n')
@@ -187,21 +203,86 @@ def calculate_energy(tabular_file_path):
             output_file.write('\t'.join(map(str, row)) + '\n')
 
     print(f"Tabular file created: {output_file_path}")
+    return output_file_path
+
+# Function to plot the interaction profiles
+def plot_interaction_profiles(tabular_file_path, output_folder):
+    # Read the tabular file and parse the data
+    with open(tabular_file_path, 'r') as file:
+        lines = file.readlines()
+
+    # Skip the header
+    data = [line.strip().split('\t') for line in lines[1:]]
+
+    # Extract unique base pairs
+    base_pairs = set(entry[0] for entry in data)
+
+    # Create a plot for each base pair
+    for base_pair in base_pairs:
+        # Filter the data for the current base pair
+        pair_data = [entry for entry in data if entry[0] == base_pair]
+
+        # Extract the distance intervals and log-ratios
+        distances = [float(interval.split('-')[0]) + 0.5 for interval in [entry[1] for entry in pair_data]]
+        log_ratios = [float(entry[4]) for entry in pair_data]
+
+        # Plot the interaction profile
+        plt.figure(figsize=(10, 6))
+        plt.plot(distances, log_ratios, marker='o', linestyle='-', label=base_pair)
+        plt.xlabel('Distance (Å)')
+        plt.ylabel('Log-Ratio (Score)')
+        plt.title(f'Interaction Profile for {base_pair}')
+        plt.grid(True)
+        plt.legend()
+        plt.savefig(f"{output_folder}/interaction_profile_{base_pair.replace('-', '_')}.png")
+        plt.close()
+
+    print("Interaction profiles plotted and saved in ", output_folder )
+
+# Main function to process all PDB files in a folder
+def process_all_pdb_files(folder_path, output_folder):
+    # Create output folder if it doesn't exist
+    os.makedirs(output_folder, exist_ok=True)
+
+    # Create a combined distances file
+    combined_output_file_path = os.path.join(output_folder, 'combined_distances.txt')
+    with open(combined_output_file_path, 'w') as output_file:
+        output_file.write('\t'.join(["File_Name", "Base_Pair", "Residue_i", "Residue_j", "Distance(Å)"]) + '\n')
+
+    # List all PDB files in the folder
+    pdb_files = [f for f in os.listdir(folder_path) if f.endswith('.pdb')]
+
+    for pdb_file in pdb_files:
+        input_file_path = os.path.join(folder_path, pdb_file)
+
+        # STEP 1: Process the PDB file and collect C3' data in tabular file
+        C3_tabular_file_path = extraction_C3_tabular_format(input_file_path, output_folder)
+
+        # STEP 2: Call the function to compute distances and combine results
+        compute_distances_and_combine(C3_tabular_file_path, combined_output_file_path)
+
+    # STEP 3: Calculate the estimated energy for each base pair and each distance interval
+    energy_tab_file = calculate_energy(combined_output_file_path, output_folder)
+
+    # STEP 4: Plot the interaction profiles
+    plot_interaction_profiles(energy_tab_file, output_folder)
+
+# Define the input file path and headers
+header = [
+    "Residue_Name",     # Residue name (e.g., C)
+    "Residue_number",   # Residue sequence number (e.g., 127)
+    "Chain_ID",         # Chain ID (e.g., A)
+    "X_Coordinate",     # X Coordinate (e.g., 19.212)
+    "Y_Coordinate",     # Y Coordinate (e.g., 56.017)
+    "Z_Coordinate"      # Z Coordinate (e.g., 58.123)
+]
+
+# Define the folder path containing PDB files
+RNA_pdb_folder = "/home/zozo/Documents/RNA_postic/01_RNA_pdb"
+output_folder = "/home/zozo/Documents/RNA_postic/02_results"
 
 
-
-
-# MAIN 
-
-# STEP 1 : Process the PDB file and collect C3' data in tabular file
-C3_tabular_file_path = extraction_C3_tabular_format(input_file_path)
-
-# STEP 2 : Call the function to compute distances and write it in a tabular file
-distance_tab_file = compute_distances(C3_tabular_file_path)
-
-# STEP 3 : Calculate the estimated enregy for each base pairs and each distances intervals
-calculate_energy(distance_tab_file)
-
-
-
-
+#Main code
+if __name__ == "__main__":
+    # Call the main function to process all PDB files in the folder
+    process_all_pdb_files(RNA_pdb_folder, output_folder)
