@@ -25,8 +25,9 @@ Output:
 import matplotlib.pyplot as plt
 import os
 
-# Define the folder where you want to save the plots
-output_folder = "/home/zozo/Documents/RNA_postic/RNA_postic_project/interaction_profiles"
+# Define the input file and output folder where you want to save the plots
+input_file = '/home/zozo/Documents/RNA_postic/02_results/combined_distances_energy.txt'
+output_folder = "/home/zozo/Documents/RNA_postic/02_results/interaction_profiles"
 
 # Create the folder if it doesn't exist
 os.makedirs(output_folder, exist_ok=True)
@@ -67,5 +68,8 @@ def plot_interaction_profiles(tabular_file_path, output_folder):
 
     print("Interaction profiles plotted and saved in", output_folder)
 
-# Call the function to plot interaction profiles
-plot_interaction_profiles('/home/zozo/Documents/RNA_postic/02_results/combined_distances_energy.txt', output_folder)
+
+#Main code
+if __name__ == "__main__":
+    # Call the function to plot interaction profiles
+    plot_interaction_profiles(input_file, output_folder)
