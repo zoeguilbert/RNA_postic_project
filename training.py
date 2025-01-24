@@ -231,9 +231,6 @@ def process_all_pdb_files(folder_path, output_folder):
     # STEP 3: Calculate the estimated energy for each base pair and each distance interval
     energy_tab_file = calculate_energy(combined_output_file_path, output_folder)
 
-    # STEP 4: Plot the interaction profiles
-    plot_interaction_profiles(energy_tab_file, output_folder)
-
 
 
 #Main code
