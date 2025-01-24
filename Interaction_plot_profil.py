@@ -1,3 +1,27 @@
+"""
+Author: Zoe GUILBERT
+Date: 2025-01-24
+
+Description:
+This script reads a tabular file containing interaction score for each nucleotide pairs.
+It also plots the interaction profiles for each base pair, and saves the plots in a specified folder.
+
+Instructions:
+1. Set the input file path to your tabular file containing interaction data.
+2. Set the output folder path where you want to save the plots.
+3. Run the script.
+
+Input Table:
+The input tabular file should contain interaction data with the following columns:
+- Base Pair: The base pair (e.g., "A-U").
+- Distance Interval: The distance interval (e.g., "6-7").
+- Log-Ratio: The log-ratio score for the interaction.
+
+Output:
+- Plots of interaction profiles for each base pair saved in the specified output folder.
+"""
+
+
 import matplotlib.pyplot as plt
 import os
 
@@ -41,7 +65,7 @@ def plot_interaction_profiles(tabular_file_path, output_folder):
         plt.savefig(f"{output_folder}/interaction_profile_{base_pair.replace('-', '_')}.png")
         plt.close()
 
-    print("Interaction profiles plotted and saved.")
+    print("Interaction profiles plotted and saved in", output_folder)
 
 # Call the function to plot interaction profiles
-plot_interaction_profiles('/home/zozo/Documents/RNA_postic/RNA_postic_project/1gid_C3_tabular_distances_energy_tabular.txt', output_folder)
+plot_interaction_profiles('/home/zozo/Documents/RNA_postic/02_results/combined_distances_energy.txt', output_folder)
