@@ -16,7 +16,6 @@ This script processes RNA PDB files to:
 - Extract C3' atom data and store it in a tabular format.
 - Compute distances between C3' atoms.
 - Estimate the energy profiles of RNA conformations based on distance intervals.
-- Plot interaction profiles for nucleotide pairs.
 
 #### Input
 - **PDB Files:** Atomic coordinates in the standard PDB format.
@@ -26,8 +25,6 @@ This script processes RNA PDB files to:
   - Extracted C3' atom data.
   - Computed distances between nucleotide pairs.
   - Estimated energy profiles for nucleotide interactions.
-- Plots:
-  - Interaction profiles for each base pair.
 
 #### Usage
 1. Set the paths for the input PDB folder and output results folder:
