@@ -26,8 +26,8 @@ import matplotlib.pyplot as plt
 import os
 
 # Define the input file and output folder where you want to save the plots
-input_file = '/home/zozo/Documents/RNA_postic/02_results/combined_distances_energy.txt'
-output_folder = "/home/zozo/Documents/RNA_postic/02_results/interaction_profiles"
+input_file = '/home/zozo/Documents/RNA_postic/02_results_rna_prediction/combined_distances_energy.txt'
+output_folder = "/home/zozo/Documents/RNA_postic/02_results_rna_prediction/interaction_profiles"
 
 # Create the folder if it doesn't exist
 os.makedirs(output_folder, exist_ok=True)
