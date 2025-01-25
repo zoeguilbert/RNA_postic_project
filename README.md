@@ -101,7 +101,7 @@ This script processes a PDB file to:
 
 ---
 
-### 4. **Nucleotide Interaction Analysis**
+### 4. **Nucleotide Distances Analysis**
 **File:** `Distance_comparison_big_vs_small.py`
 
 #### Description
