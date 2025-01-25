@@ -7,30 +7,30 @@ This script processes a PDB file to extract C3' atom data, computes distances be
 and calculates the estimated Gibbs free energy of the evaluated RNA conformation using linear interpolation.
 
 Instructions:
-1. Set the input file path to your PDB file.
+1. Set the folder path containing your PDB files.
 2. Set the output folder path where you want to save the results.
 3. Ensure the intervals for linear interpolation are defined correctly.
 4. Run the script.
 
 Input Table:
-The input PDB file should contain atomic coordinates in the standard PDB format.
+The input PDB files should contain atomic coordinates in the standard PDB format.
 The script extracts C3' atoms and computes distances between them.
 
 Output:
-- A tabular file containing C3' atom data.
-- A tabular file containing computed distances.
-- The estimated Gibbs free energy printed to the console.
+- A tabular file containing C3' atom data for each pdb file.
+- A tabular file containing computed distances for each pdb file.
+- The estimated Gibbs free energy for each PDB file saved in a single output file.
 """
 
-
-import math
 import os
+from training import parse_c3_prime, extraction_C3_tabular_format, calculate_distance
+import math
 
 # Define the input file path
-input_file_path = "/home/zozo/Documents/RNA_postic/RNA_prediction/R1212TS028_1"
+input_folder_path = "/home/zozo/Documents/RNA_postic/RNA_prediction/"
 
 # Define the output folder path
-output_folder_path = "/home/zozo/Documents/RNA_postic/02_results"
+output_folder_path = "/home/zozo/Documents/RNA_postic/02_results_rna_prediction"
 
 # Ensure the output folder exists
 os.makedirs(output_folder_path, exist_ok=True)
@@ -45,48 +45,14 @@ header = [
     "Z Coordinate"      # Z Coordinate (e.g., 58.123)
 ]
 
-# Function to parse a single line for C3' atoms
-def parse_c3_prime(line):
-    """Parses a line to extract data if it contains a C3' atom."""
-    if line.startswith("ATOM") and "C3'" in line[12:16]:
-        return [
-            line[17:20].strip(),               # Residue Name
-            int(line[22:26].strip()),          # Residue Sequence
-            line[21].strip(),                  # Chain ID
-            float(line[30:38].strip()),        # X Coordinate
-            float(line[38:46].strip()),        # Y Coordinate
-            float(line[46:54].strip())         # Z Coordinate
-        ]
-    return None
-
-# Function to process the PDB file and collect C3' data
-def extraction_C3_tabular_format(input_file_path, output_folder_path):
-    tabular_data = []
-    with open(input_file_path, 'r') as file:
-        for line in file:
-            parsed_line = parse_c3_prime(line)
-            if parsed_line:
-                tabular_data.append(parsed_line)
-
-    # Write the results to an output file
-    base_name = os.path.basename(input_file_path).replace('.pdb', '_C3_tabular.txt')
-    output_file_path = os.path.join(output_folder_path, base_name)
-    with open(output_file_path, 'w') as output_file:
-        output_file.write('\t'.join(header) + '\n')  # Write headers
-        for row in tabular_data:                     # Write each parsed row
-            output_file.write('\t'.join(map(str, row)) + '\n')
-
-    print(f"Tabular file created: {output_file_path}")
-    return output_file_path
-
-# Function to calculate the distance between two points in 3D space
-def calculate_distance(atom1, atom2):
-    x1, y1, z1 = atom1[3], atom1[4], atom1[5]
-    x2, y2, z2 = atom2[3], atom2[4], atom2[5]
-    return math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2 + (z2 - z1) ** 2)
-
-# Function to compute distances between C3' atoms
+# Function to compute distances between C3' atoms and save results in a new file
 def compute_distances(tabular_file_path, output_folder_path):
+    # Extract the base name of the file (e.g., "8olv" from "8olv_C3_tabular.txt")
+    base_name = os.path.basename(tabular_file_path).replace('_C3_tabular.txt', '')
+
+    # Define the output file path
+    output_file_path = os.path.join(output_folder_path, f"{base_name}_distances.txt")
+
     # Read the tabular file and parse the data
     with open(tabular_file_path, 'r') as file:
         lines = file.readlines()
@@ -104,10 +70,10 @@ def compute_distances(tabular_file_path, output_folder_path):
 
     # Create tabular data for output
     tabular_data = []
-    header = ["Base Pair", "Residue i", "Residue j", "Distance (Å)"]
+    header = ["Base_Pair", "Residue_i", "Residue_j", "Distance (Å)"]
 
     # Compute distances and store them directly in tabular_data
-    for i in range(len(c3_atoms)):
+    for i in range(len(c3_atoms) - 4):
         for j in range(i + 4, len(c3_atoms)):  # Residues must be separated by at least 3 positions
             if c3_atoms[i][2] == c3_atoms[j][2]:  # Only consider intrachain distances
                 base_pair = tuple(sorted((c3_atoms[i][0], c3_atoms[j][0])))
@@ -115,10 +81,7 @@ def compute_distances(tabular_file_path, output_folder_path):
                     distance = calculate_distance(c3_atoms[i], c3_atoms[j])
                     tabular_data.append([f"{base_pair[0]}-{base_pair[1]}", c3_atoms[i][1], c3_atoms[j][1], distance])
 
-    # Write the tabular data to a new file
-    base_name = os.path.basename(tabular_file_path).replace('_C3_tabular.txt', '_distances.txt')
-    output_file_path = os.path.join(output_folder_path, base_name)
-
+    # Write the tabular data to the new output file
     with open(output_file_path, 'w') as output_file:
         output_file.write('\t'.join(header) + '\n')
         for row in tabular_data:
@@ -126,6 +89,7 @@ def compute_distances(tabular_file_path, output_folder_path):
 
     print(f"Tabular file created: {output_file_path}")
     return tabular_data
+
 
 # Function to compute the scoring value using linear interpolation
 def linear_interpolation(distance, intervals):
@@ -153,20 +117,34 @@ def calculate_gibbs_free_energy(distances, intervals):
     gibbs_free_energy = sum(scores)
     return gibbs_free_energy
 
-# Main code
+# Function to process all PDB files in the input folder
+def process_all_files(input_folder_path, output_folder_path, output_file):
+    # Get a list of all PDB files in the input folder
+    pdb_files = [f for f in os.listdir(input_folder_path) if f.endswith('.pdb')]
+
+    with open(output_file, 'w') as outfile:
+        for pdb_file in pdb_files:
+            pdb_file_path = os.path.join(input_folder_path, pdb_file)
+
+            # Process the PDB file and collect C3' data
+            tabular_file_path = extraction_C3_tabular_format(pdb_file_path, output_folder_path)
+
+            # Compute distances between C3' atoms
+            distances = compute_distances(tabular_file_path, output_folder_path)
+
+            # Define intervals for linear interpolation
+            intervals = [(i, i + 1) for i in range(20)]
+
+            # Extract distances from the tabular data
+            distance_values = [row[3] for row in distances]
+
+            # Calculate Gibbs free energy
+            gibbs_free_energy = calculate_gibbs_free_energy(distance_values, intervals)
+            print(f"Estimated Gibbs Free Energy for {pdb_file}: {gibbs_free_energy}")
+
+            # Write the result to the output file
+            outfile.write(f"{pdb_file}: {gibbs_free_energy}\n")
+
 if __name__ == "__main__":
-    # Process the PDB file and collect C3' data
-    tabular_file_path = extraction_C3_tabular_format(input_file_path, output_folder_path)
-
-    # Compute distances between C3' atoms
-    distances = compute_distances(tabular_file_path, output_folder_path)
-
-    # Define intervals for linear interpolation
-    intervals = [(6, 7), (7, 8), (8, 9), (9, 10)]
-
-    # Extract distances from the tabular data
-    distance_values = [row[3] for row in distances]
-
-    # Calculate Gibbs free energy
-    gibbs_free_energy = calculate_gibbs_free_energy(distance_values, intervals)
-    print(f"Estimated Gibbs Free Energy: {gibbs_free_energy}")
+    output_file = os.path.join(output_folder_path, 'gibbs_free_energy_results.txt')
+    process_all_files(input_folder_path, output_folder_path, output_file)
