@@ -32,8 +32,8 @@ import matplotlib.pyplot as plt
 1. Set the input folder path containing PDB files.
 2. Set the output folder path where you want to save the results.
 """
-RNA_pdb_folder = "/home/zozo/Documents/RNA_postic/01_RNA_pdb_1gid"
-output_folder = "/home/zozo/Documents/RNA_postic/02_results"
+RNA_pdb_folder = "/home/zozo/Documents/RNA_postic/RNA_prediction"
+output_folder = "/home/zozo/Documents/RNA_postic/02_results_rna_prediction"
 
 
 
@@ -154,7 +154,9 @@ def calculate_energy(tabular_file_path, output_folder):
                 total_counts[i] += 1
                 total_pairs[base_pair] += 1
                 break
-
+    print(counts)
+    print(total_counts)
+    print(total_pairs)
     # Calculate the observed frequencies
     observed_frequencies = defaultdict(lambda: [0] * len(distance_bins))
     for base_pair, count_list in counts.items():
