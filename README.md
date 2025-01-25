@@ -97,7 +97,7 @@ This script processes a PDB file to:
    ```bash
    python distance_energy_calculation.py
    ```
-3. Output files will be saved in the specified output folder, and the estimated Gibbs free energy will be printed in the console.
+3. Output files will be saved in the specified output folder, and the estimated Gibbs free energy will be saved in a tabumar file and printed in the console.
 
 ---
 
